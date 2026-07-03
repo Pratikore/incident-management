@@ -10,11 +10,13 @@ import java.util.UUID;
 public class IncidentResponseDTO {
 
   private UUID id;
+  private String reference;
   private String title;
   private String description;
   private Severity severity;
   private Category category;
   private IncidentStatus status;
+  private String createdBy;
   private Instant createdAt;
   private Instant updatedAt;
   private String aiSummary;
@@ -26,6 +28,14 @@ public class IncidentResponseDTO {
 
   public void setId(UUID id) {
     this.id = id;
+  }
+
+  public String getReference() {
+    return reference;
+  }
+
+  public void setReference(String reference) {
+    this.reference = reference;
   }
 
   public String getTitle() {
@@ -66,6 +76,14 @@ public class IncidentResponseDTO {
 
   public void setStatus(IncidentStatus status) {
     this.status = status;
+  }
+
+  public String getCreatedBy() {
+    return createdBy;
+  }
+
+  public void setCreatedBy(String createdBy) {
+    this.createdBy = createdBy;
   }
 
   public Instant getCreatedAt() {

@@ -12,7 +12,6 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,11 +27,10 @@ public class UserService {
 
   public User create(String username, String rawPassword, Role role) {
     String trimmed = username.trim();
-    if (repository.existsByUsername(trimmed)) {
+    if (repository.existsByUsernameIgnoreCase(trimmed)) {
       throw new ConflictException("Username already exists: " + trimmed);
     }
     User user = new User();
-    user.setId(UUID.randomUUID());
     user.setUsername(trimmed);
     user.setPasswordHash(passwordEncoder.encode(rawPassword));
     user.setRole(role);
@@ -45,7 +43,7 @@ public class UserService {
   }
 
   public Optional<User> findByUsername(String username) {
-    return repository.findByUsername(username);
+    return repository.findByUsernameIgnoreCase(username);
   }
 
   public boolean checkPassword(User user, String rawPassword) {

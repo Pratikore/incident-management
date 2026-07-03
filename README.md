@@ -1,22 +1,27 @@
 # Incident Management
 
-A lightweight full-stack Incident Management application: a Spring Boot 3 REST API with an in-memory
-store, plus a React + TypeScript UI to create, list, filter, view, and update incidents. Includes
-token-based authentication with roles, an admin user-management screen, a dark-themed monitoring
-dashboard with charts, and optional AI assists (incident summaries, severity recommendations, and
-root-cause suggestions).
+A lightweight full-stack Incident Management application: a Spring Boot 3 REST API backed by a SQL
+database (Spring Data JPA), plus a React + TypeScript UI to create, list, filter, view, and update
+incidents. Includes token-based authentication with roles, an admin user-management screen, a
+dark-themed monitoring dashboard with charts, and optional AI assists (incident summaries, severity
+recommendations, and root-cause suggestions).
 
 ## Features
 
 - Login screen with token-based auth; a default admin is seeded on first startup
 - Role-based access (ADMIN / USER); admins can create users and manage roles
-- Monitoring dashboard with stat cards, a system-health gauge, and status/severity/category charts
-  plus a 7-day "new incidents" trend
+- Monitoring dashboard with stat cards, an always-on system-health gauge (shows 100% healthy when
+  there are no incidents), status/severity/category charts, a 7-day "new incidents" trend, and a
+  one-click "New Incident" button
+- Human-friendly incident references (e.g. `INC-0007`) shown across the table, detail page, and chat
+- Each incident records who raised it (`createdBy`) plus created/updated timestamps
 - Incident categories (Networking, Infrastructure, Database, Application, Security, Hardware, Other)
   with create, filter, table, and dashboard support
 - Dark theme (default) with a light/dark toggle, and glass-effect header and footer
 - Full incident lifecycle: create, filter by severity/status/category, view details, update status
-- Floating AI chatbot that answers questions from your live incident data (works free with no key; upgrades to any OpenAI-compatible LLM, e.g. Groq's free tier)
+- Floating AI chatbot named **Aria** that answers questions from your live incident data - including
+  the status of a specific incident by reference (e.g. "status of INC-0007"). Works free with no key;
+  upgrades to any OpenAI-compatible LLM, e.g. Groq's free tier
 - AI assists: summaries, severity recommendations, and root-cause suggestions
 - Robust error handling: consistent JSON API errors and a React error boundary in the UI
 
@@ -24,8 +29,8 @@ root-cause suggestions).
 
 | Layer     | Technology |
 |-----------|------------|
-| Backend   | Java 17, Spring Boot 3.3 (Web, Validation, Security), Maven |
-| Storage   | In-memory, thread-safe `ConcurrentHashMap` (data resets on restart) |
+| Backend   | Java 17, Spring Boot 3.3 (Web, Validation, Security, Data JPA), Maven |
+| Storage   | SQL via Spring Data JPA - H2 (file-backed) by default, PostgreSQL in production via env vars |
 | Auth      | Opaque bearer tokens + Spring Security, BCrypt-hashed passwords |
 | AI        | Any OpenAI-compatible chat API via Spring `RestClient` (Groq free tier by default), with a live-data local assistant fallback |
 | Frontend  | React 18, TypeScript, Vite, TanStack Query, React Router, Tailwind CSS, Recharts |
@@ -59,8 +64,8 @@ incident-management/
     src/main/java/com/pm/incidentservice/
       controller/                  REST controllers (@RestController)
       service/                     Business logic (@Service)
-      repository/                  In-memory stores (@Repository)
-      model/                       Domain models and enums
+      repository/                  Spring Data JPA repositories
+      model/                       JPA entities and enums
       dto/                         *RequestDTO / *ResponseDTO
       mapper/                      IncidentMapper, UserMapper (model <-> DTO)
       exception/                   Custom exceptions + GlobalExceptionHandler
@@ -184,9 +189,16 @@ The repo includes ready-to-use configs to host the app publicly at no cost:
    URL, then redeploy.
 3. Open the Vercel URL and log in with `admin` / `admin123`.
 
-**Free-tier caveats:** the backend uses in-memory storage, so data resets on every restart. Render's
-free service also sleeps after ~15 min idle and cold-starts (~30–60s for Java) on the next request.
-The default admin is public, so treat the deployment as a demo only.
+**Durable storage on Render (optional):** by default the backend uses a file-backed H2 database on the
+container's local disk, which is ephemeral on Render's free tier (data resets on redeploy/restart). To
+switch to a managed PostgreSQL that survives restarts, uncomment the two "OPTIONAL Postgres" steps in
+`render.yaml` (the `databases:` block and the `SPRING_PROFILES_ACTIVE=postgres` + `DB_*` env vars). The
+`postgres` Spring profile (`application-postgres.properties`) builds the JDBC URL from those fields.
+Outside Render, you can instead set `SPRING_DATASOURCE_URL` / `SPRING_DATASOURCE_USERNAME` /
+`SPRING_DATASOURCE_PASSWORD` / `SPRING_DATASOURCE_DRIVER` directly.
+
+**Free-tier caveats:** Render's free service sleeps after ~15 min idle and cold-starts (~30–60s for
+Java) on the next request. The default admin is public, so treat the deployment as a demo only.
 
 ## AI Features (Bonus)
 
@@ -271,11 +283,13 @@ Request body: `{ "message": "...", "history": [{ "role": "user|assistant", "cont
 ```json
 {
   "id": "uuid",
+  "reference": "INC-0007",
   "title": "string",
   "description": "string",
   "severity": "LOW | MEDIUM | HIGH | CRITICAL",
   "category": "NETWORKING | INFRASTRUCTURE | DATABASE | APPLICATION | SECURITY | HARDWARE | OTHER",
   "status": "OPEN | IN_PROGRESS | RESOLVED | CLOSED",
+  "createdBy": "string (username of the reporter)",
   "createdAt": "ISO-8601",
   "updatedAt": "ISO-8601",
   "aiSummary": "string | null",
@@ -337,10 +351,13 @@ curl -X POST http://localhost:8080/api/users \
 
 ## Notes
 
-- Persistence is in-memory by design; restarting the backend clears all incidents, users, and
-  tokens (the default admin is re-seeded on the next start).
-- The default admin credentials are configurable via `app.default-admin.username` /
-  `app.default-admin.password` in `application.properties`.
-- Authentication uses opaque bearer tokens stored in-memory; passwords are hashed with BCrypt.
+- Incidents and users are persisted in a SQL database via Spring Data JPA. By default this is a
+  file-backed H2 database (`./data/incidents.mv.db`) that survives restarts; point the
+  `spring.datasource.*` properties (or `SPRING_DATASOURCE_*` env vars) at PostgreSQL for production.
+  The schema is auto-managed by Hibernate (`spring.jpa.hibernate.ddl-auto=update`).
+- The default admin is seeded on first startup only (when no users exist) and its credentials are
+  configurable via `app.default-admin.username` / `app.default-admin.password`.
+- Authentication uses opaque bearer tokens stored in-memory (tokens reset on restart); passwords are
+  hashed with BCrypt.
 - CORS allows `http://localhost:5173` by default (configurable via `app.cors.allowed-origins`).
 ```

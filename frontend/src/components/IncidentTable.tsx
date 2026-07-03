@@ -23,6 +23,9 @@ export default function IncidentTable({ incidents }: Props) {
         <thead className="bg-slate-50 dark:bg-slate-800/50">
           <tr>
             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              ID
+            </th>
+            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Title
             </th>
             <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 md:table-cell">
@@ -42,6 +45,14 @@ export default function IncidentTable({ incidents }: Props) {
         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
           {incidents.map((incident) => (
             <tr key={incident.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+              <td className="whitespace-nowrap px-4 py-3">
+                <Link
+                  to={`/incidents/${incident.id}`}
+                  className="font-mono text-xs font-medium text-blue-700 hover:underline dark:text-blue-400"
+                >
+                  {incident.reference}
+                </Link>
+              </td>
               <td className="px-4 py-3">
                 <Link
                   to={`/incidents/${incident.id}`}

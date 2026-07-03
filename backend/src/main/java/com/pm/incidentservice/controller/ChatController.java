@@ -69,8 +69,9 @@ public class ChatController {
 
     String openTitles = incidents.stream()
         .filter(i -> i.getStatus() == IncidentStatus.OPEN || i.getStatus() == IncidentStatus.IN_PROGRESS)
-        .limit(5)
-        .map(i -> "- [" + i.getSeverity() + "/" + i.getCategory() + "] " + i.getTitle())
+        .limit(8)
+        .map(i -> "- " + i.getReference() + " [" + i.getSeverity() + "/" + i.getCategory() + "] "
+            + i.getTitle() + " (" + i.getStatus() + ")")
         .collect(Collectors.joining("\n"));
     if (!openTitles.isEmpty()) {
       sb.append("\nActive incidents:\n").append(openTitles);

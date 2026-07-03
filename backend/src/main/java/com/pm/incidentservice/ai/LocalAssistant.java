@@ -8,21 +8,30 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
 * A small rule-based assistant that answers common questions about the current
-* incidents without needing an external LLM. It keeps the chatbot useful (and
-* free) even when no AI provider key is configured.
+* incidents without needing an external LLM. It keeps the chatbot ("Aria")
+* useful (and free) even when no AI provider key is configured.
 */
 @Component
 public class LocalAssistant {
+
+  public static final String NAME = "Aria";
+
+  // Matches references the way people type them: INC-7, inc 007, incident #7, #7.
+  private static final Pattern REFERENCE = Pattern.compile(
+      "(?:inc|incident)[\\s#-]*0*(\\d+)|#0*(\\d+)");
 
   public String answer(String message, List<Incident> incidents) {
     String q = message == null ? "" : message.toLowerCase(Locale.ROOT).trim();
 
     if (q.isEmpty() || mentions(q, "help", "what can you", "how do you")) {
-      return "I can answer questions about your incidents. Try:\n"
+      return "I'm " + NAME + ", your incident assistant. Try asking:\n"
+          + "- What's the status of INC-0001?\n"
           + "- How many incidents are open?\n"
           + "- Which incidents are critical?\n"
           + "- How's the overall health?\n"
@@ -30,8 +39,13 @@ public class LocalAssistant {
     }
 
     if (hasWord(q, "hi", "hello", "hey", "yo", "hiya", "greetings")) {
-      return "Hi! Ask me about open, critical, resolved, or category-specific incidents, "
-          + "or say \"health\" for a quick summary.";
+      return "Hi, I'm " + NAME + "! Ask me about a specific incident (e.g. INC-0001), "
+          + "or about open, critical, resolved, or category-specific incidents.";
+    }
+
+    String referenceReply = referenceReply(q, incidents);
+    if (referenceReply != null) {
+      return referenceReply;
     }
 
     Category category = matchCategory(q);
@@ -75,6 +89,43 @@ public class LocalAssistant {
     return "I couldn't match that to incident data, so here's the current snapshot:\n\n" + summary(incidents);
   }
 
+  /**
+  * If the message references a specific incident (INC-7, incident 7, #7),
+  * returns its details or a "not found" note; otherwise returns null so the
+  * caller can fall through to the general handlers.
+  */
+  private String referenceReply(String q, List<Incident> incidents) {
+    Matcher matcher = REFERENCE.matcher(q);
+    if (!matcher.find()) {
+      return null;
+    }
+    String digits = matcher.group(1) != null ? matcher.group(1) : matcher.group(2);
+    long number;
+    try {
+      number = Long.parseLong(digits);
+    } catch (NumberFormatException ex) {
+      return null;
+    }
+    return incidents.stream()
+        .filter(i -> i.getSequence() == number)
+        .findFirst()
+        .map(this::detail)
+        .orElse("I couldn't find " + String.format("INC-%04d", number)
+            + ". Please double-check the incident number.");
+  }
+
+  private String detail(Incident incident) {
+    StringBuilder sb = new StringBuilder();
+    sb.append(incident.getReference()).append(" - ").append(incident.getTitle()).append('\n')
+        .append("Status: ").append(incident.getStatus())
+        .append(" | Severity: ").append(incident.getSeverity())
+        .append(" | Category: ").append(incident.getCategory());
+    if (incident.getCreatedBy() != null && !incident.getCreatedBy().isBlank()) {
+      sb.append("\nRaised by: ").append(incident.getCreatedBy());
+    }
+    return sb.toString();
+  }
+
   private String summary(List<Incident> incidents) {
     long open = incidents.stream().filter(i -> i.getStatus() == IncidentStatus.OPEN).count();
     long inProgress = incidents.stream().filter(i -> i.getStatus() == IncidentStatus.IN_PROGRESS).count();
@@ -105,7 +156,8 @@ public class LocalAssistant {
     }
     String list = incidents.stream()
         .limit(5)
-        .map(i -> "\n- [" + i.getSeverity() + "] " + i.getTitle() + " (" + i.getStatus() + ")")
+        .map(i -> "\n- " + i.getReference() + " [" + i.getSeverity() + "] " + i.getTitle()
+            + " (" + i.getStatus() + ")")
         .collect(Collectors.joining());
     String more = incidents.size() > 5 ? "\n...and " + (incidents.size() - 5) + " more." : "";
     return list + more;

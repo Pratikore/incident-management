@@ -6,11 +6,13 @@ import type { Incident } from '../types/incident';
 
 const incident: Incident = {
   id: 'abc-123',
+  reference: 'INC-0001',
   title: 'Checkout latency spike',
   description: 'p99 latency above 2s',
   severity: 'HIGH',
   category: 'APPLICATION',
   status: 'OPEN',
+  createdBy: 'admin',
   createdAt: '2026-07-01T10:00:00Z',
   updatedAt: '2026-07-01T10:00:00Z',
 };

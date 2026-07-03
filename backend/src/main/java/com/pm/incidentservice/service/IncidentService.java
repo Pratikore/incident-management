@@ -21,21 +21,29 @@ import java.util.stream.Collectors;
 public class IncidentService {
 
   private final IncidentRepository repository;
-  private final AtomicLong sequenceGenerator = new AtomicLong();
+
+  // Seeded lazily from the database on first use (-1 means "not seeded yet") so
+  // references stay monotonic across restarts without an extra startup hook.
+  private final AtomicLong sequenceGenerator = new AtomicLong(-1);
 
   public IncidentService(IncidentRepository repository) {
     this.repository = repository;
   }
 
-  public Incident create(IncidentRequestDTO request) {
+  public Incident create(IncidentRequestDTO request, String createdBy) {
     Instant now = Instant.now();
     Incident incident = IncidentMapper.toModel(request);
-    incident.setId(UUID.randomUUID());
     incident.setStatus(IncidentStatus.OPEN);
+    incident.setCreatedBy(createdBy);
     incident.setCreatedAt(now);
     incident.setUpdatedAt(now);
-    incident.setSequence(sequenceGenerator.incrementAndGet());
+    incident.setSequence(nextSequence());
     return repository.save(incident);
+  }
+
+  private long nextSequence() {
+    sequenceGenerator.compareAndSet(-1, repository.findMaxSequence());
+    return sequenceGenerator.incrementAndGet();
   }
 
   public List<Incident> findAll(Severity severity, IncidentStatus status, Category category) {

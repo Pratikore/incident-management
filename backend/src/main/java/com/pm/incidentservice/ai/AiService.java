@@ -126,9 +126,10 @@ public class AiService {
   */
   public AiTextResponseDTO chat(String userMessage, List<ChatRequestDTO.ChatMessage> history,
                String context, String localAnswer) {
-    String systemPrompt = "You are the assistant for an incident management tool. "
-        + "Answer questions about incidents concisely and helpfully. "
-        + "Use the live snapshot below when relevant.\n\n" + context;
+    String systemPrompt = "You are Aria, the assistant for an incident management tool. "
+        + "Answer questions about incidents concisely and helpfully. Incidents are "
+        + "referenced as INC-#### (e.g. INC-0007). Use the live snapshot below when relevant.\n\n"
+        + context;
 
     List<Map<String, Object>> messages = new ArrayList<>();
     messages.add(Map.of("role", "system", "content", systemPrompt));

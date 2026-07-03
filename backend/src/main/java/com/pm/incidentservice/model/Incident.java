@@ -1,33 +1,72 @@
 package com.pm.incidentservice.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 import java.time.Instant;
 import java.util.UUID;
 
+@Entity
+@Table(name = "incidents")
 public class Incident {
 
+  @Id
+  @GeneratedValue(strategy = GenerationType.UUID)
   private UUID id;
+
+  @Column(nullable = false)
   private String title;
+
+  @Column(nullable = false, length = 5000)
   private String description;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
   private Severity severity;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 30)
   private Category category;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 20)
   private IncidentStatus status;
+
+  /** Username of the person who raised the incident. */
+  @Column(name = "created_by")
+  private String createdBy;
+
+  @Column(name = "created_at", nullable = false)
   private Instant createdAt;
+
+  @Column(name = "updated_at", nullable = false)
   private Instant updatedAt;
+
+  @Column(name = "ai_summary", length = 4000)
   private String aiSummary;
+
+  @Column(name = "ai_root_cause", length = 4000)
   private String aiRootCause;
 
   /**
-  * Monotonic creation sequence used to guarantee a stable "newest first"
-  * ordering even when two incidents share the same createdAt timestamp
-  * (timestamp resolution can be coarse on some platforms). Not exposed via
-  * the API.
+  * Monotonic creation sequence used both to guarantee a stable "newest first"
+  * ordering and to derive the human-friendly reference (e.g. INC-0007).
   */
-  @JsonIgnore
+  @Column(name = "seq", nullable = false)
   private long sequence;
 
   public Incident() {
+  }
+
+  /** Human-friendly identifier such as INC-0007, derived from the sequence. */
+  public String getReference() {
+    return String.format("INC-%04d", sequence);
   }
 
   public UUID getId() {
@@ -76,6 +115,14 @@ public class Incident {
 
   public void setStatus(IncidentStatus status) {
     this.status = status;
+  }
+
+  public String getCreatedBy() {
+    return createdBy;
+  }
+
+  public void setCreatedBy(String createdBy) {
+    this.createdBy = createdBy;
   }
 
   public Instant getCreatedAt() {

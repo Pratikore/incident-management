@@ -9,6 +9,8 @@ import com.pm.incidentservice.model.Severity;
 import com.pm.incidentservice.repository.IncidentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
 import java.util.List;
 import java.util.UUID;
@@ -16,13 +18,17 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@DataJpaTest
 class IncidentServiceTest {
+
+  @Autowired
+  private IncidentRepository repository;
 
   private IncidentService service;
 
   @BeforeEach
   void setUp() {
-    service = new IncidentService(new IncidentRepository());
+    service = new IncidentService(repository);
   }
 
   private IncidentRequestDTO request(String title, String description, Severity severity) {
@@ -39,10 +45,12 @@ class IncidentServiceTest {
   }
 
   @Test
-  void createAssignsIdTimestampsAndDefaultsStatusToOpen() {
-    Incident created = service.create(request("DB down", "Primary database unreachable", Severity.CRITICAL));
+  void createAssignsIdReferenceTimestampsAndDefaultsStatusToOpen() {
+    Incident created = service.create(request("DB down", "Primary database unreachable", Severity.CRITICAL), "alice");
 
     assertThat(created.getId()).isNotNull();
+    assertThat(created.getReference()).matches("INC-\\d{4}");
+    assertThat(created.getCreatedBy()).isEqualTo("alice");
     assertThat(created.getStatus()).isEqualTo(IncidentStatus.OPEN);
     assertThat(created.getCreatedAt()).isNotNull();
     assertThat(created.getUpdatedAt()).isNotNull();
@@ -50,9 +58,17 @@ class IncidentServiceTest {
   }
 
   @Test
+  void referencesIncrementMonotonically() {
+    Incident first = service.create(request("A", "desc", Severity.LOW), "bob");
+    Incident second = service.create(request("B", "desc", Severity.LOW), "bob");
+
+    assertThat(second.getSequence()).isEqualTo(first.getSequence() + 1);
+  }
+
+  @Test
   void findAllFiltersBySeverityStatusAndCategory() {
-    Incident critical = service.create(request("A", "desc", Severity.CRITICAL, Category.DATABASE));
-    service.create(request("B", "desc", Severity.LOW, Category.NETWORKING));
+    Incident critical = service.create(request("A", "desc", Severity.CRITICAL, Category.DATABASE), "bob");
+    service.create(request("B", "desc", Severity.LOW, Category.NETWORKING), "bob");
     service.updateStatus(critical.getId(), IncidentStatus.RESOLVED);
 
     assertThat(service.findAll(Severity.CRITICAL, null, null)).hasSize(1);
@@ -64,8 +80,8 @@ class IncidentServiceTest {
 
   @Test
   void findAllReturnsNewestFirst() {
-    service.create(request("first", "desc", Severity.LOW));
-    Incident second = service.create(request("second", "desc", Severity.LOW));
+    service.create(request("first", "desc", Severity.LOW), "bob");
+    Incident second = service.create(request("second", "desc", Severity.LOW), "bob");
 
     List<Incident> all = service.findAll(null, null, null);
     assertThat(all.get(0).getId()).isEqualTo(second.getId());
@@ -73,7 +89,7 @@ class IncidentServiceTest {
 
   @Test
   void updateStatusChangesStatusAndUpdatedAt() {
-    Incident created = service.create(request("A", "desc", Severity.HIGH));
+    Incident created = service.create(request("A", "desc", Severity.HIGH), "bob");
 
     Incident updated = service.updateStatus(created.getId(), IncidentStatus.IN_PROGRESS);
 

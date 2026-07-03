@@ -17,11 +17,13 @@ export type Category = (typeof CATEGORIES)[number];
 
 export interface Incident {
   id: string;
+  reference: string;
   title: string;
   description: string;
   severity: Severity;
   category: Category;
   status: IncidentStatus;
+  createdBy?: string | null;
   createdAt: string;
   updatedAt: string;
   aiSummary?: string | null;

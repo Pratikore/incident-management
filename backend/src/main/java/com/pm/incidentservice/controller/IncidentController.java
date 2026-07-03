@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,8 +42,10 @@ public class IncidentController {
 
   @PostMapping
   @Operation(summary = "Create a new incident")
-  public ResponseEntity<IncidentResponseDTO> create(@Valid @RequestBody IncidentRequestDTO request) {
-    Incident created = service.create(request);
+  public ResponseEntity<IncidentResponseDTO> create(@Valid @RequestBody IncidentRequestDTO request,
+      Authentication authentication) {
+    String createdBy = authentication != null ? authentication.getName() : "system";
+    Incident created = service.create(request, createdBy);
     return ResponseEntity
         .created(URI.create("/api/incidents/" + created.getId()))
         .body(IncidentMapper.toDTO(created));

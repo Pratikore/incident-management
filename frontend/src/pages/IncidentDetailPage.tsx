@@ -71,7 +71,12 @@ export default function IncidentDetailPage() {
 
       <div className="card p-6">
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white">{incident.title}</h1>
+          <div>
+            <span className="font-mono text-xs font-semibold text-blue-700 dark:text-blue-400">
+              {incident.reference}
+            </span>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">{incident.title}</h1>
+          </div>
           <div className="flex gap-2">
             <SeverityBadge severity={incident.severity} />
             <StatusBadge status={incident.status} />
@@ -80,10 +85,14 @@ export default function IncidentDetailPage() {
 
         <p className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300">{incident.description}</p>
 
-        <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 text-sm dark:border-slate-800 sm:grid-cols-3">
+        <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-slate-100 pt-4 text-sm dark:border-slate-800 sm:grid-cols-4">
           <div>
             <dt className="text-xs uppercase text-slate-400">Category</dt>
             <dd className="text-slate-700 dark:text-slate-300">{categoryLabel(incident.category)}</dd>
+          </div>
+          <div>
+            <dt className="text-xs uppercase text-slate-400">Raised by</dt>
+            <dd className="text-slate-700 dark:text-slate-300">{incident.createdBy || 'Unknown'}</dd>
           </div>
           <div>
             <dt className="text-xs uppercase text-slate-400">Created</dt>

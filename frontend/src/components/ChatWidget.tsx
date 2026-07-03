@@ -2,12 +2,16 @@ import { useEffect, useRef, useState } from 'react';
 import { sendChatMessage } from '../api/client';
 import type { ChatMessage } from '../types/incident';
 
+const ASSISTANT_NAME = 'Aria';
+
 const GREETING: ChatMessage = {
   role: 'assistant',
-  content: "Hi! I'm your incident assistant. Ask me about open, critical, or recent incidents.",
+  content:
+    `Hi, I'm ${ASSISTANT_NAME}, your incident assistant. Ask me about open or critical ` +
+    'incidents, or the status of a specific one (e.g. INC-0001).',
 };
 
-const SUGGESTIONS = ['How many are open?', 'Which are critical?', "How's the health?"];
+const SUGGESTIONS = ['Status of INC-0001', 'How many are open?', 'Which are critical?'];
 
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
@@ -56,8 +60,8 @@ export default function ChatWidget() {
         <div className="fixed bottom-24 right-5 z-30 flex h-[26rem] w-[22rem] max-w-[calc(100vw-2.5rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-violet-600 px-4 py-3 text-white">
             <div>
-              <p className="text-sm font-semibold">Incident Assistant</p>
-              <p className="text-xs text-white/80">Ask about your incidents</p>
+              <p className="text-sm font-semibold">{ASSISTANT_NAME}</p>
+              <p className="text-xs text-white/80">Your incident assistant</p>
             </div>
             <button type="button" onClick={() => setOpen(false)} aria-label="Close chat" className="text-white/80 hover:text-white">
               &times;
@@ -92,7 +96,7 @@ export default function ChatWidget() {
                 ))}
               </div>
             )}
-            {sending && <p className="text-xs text-slate-400">Assistant is typing...</p>}
+            {sending && <p className="text-xs text-slate-400">{ASSISTANT_NAME} is typing...</p>}
             {error && <p className="text-xs text-red-500">{error}</p>}
           </div>
 

@@ -17,3 +17,8 @@ Thumbs.db
 target/
 dist/
 node_modules/
+
+# Local H2 database files (file-backed persistence)
+data/
+*.mv.db
+*.trace.db

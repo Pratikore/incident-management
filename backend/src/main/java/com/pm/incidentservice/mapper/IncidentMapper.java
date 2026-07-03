@@ -9,11 +9,13 @@ public class IncidentMapper {
   public static IncidentResponseDTO toDTO(Incident incident) {
     IncidentResponseDTO dto = new IncidentResponseDTO();
     dto.setId(incident.getId());
+    dto.setReference(incident.getReference());
     dto.setTitle(incident.getTitle());
     dto.setDescription(incident.getDescription());
     dto.setSeverity(incident.getSeverity());
     dto.setCategory(incident.getCategory());
     dto.setStatus(incident.getStatus());
+    dto.setCreatedBy(incident.getCreatedBy());
     dto.setCreatedAt(incident.getCreatedAt());
     dto.setUpdatedAt(incident.getUpdatedAt());
     dto.setAiSummary(incident.getAiSummary());

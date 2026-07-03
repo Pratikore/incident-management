@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Area,
@@ -17,6 +17,7 @@ import {
   YAxis,
 } from 'recharts';
 import { useIncidents } from '../hooks/useIncidents';
+import CreateIncidentModal from '../components/CreateIncidentModal';
 import { CATEGORIES, SEVERITIES, STATUSES } from '../types/incident';
 import type { Incident } from '../types/incident';
 import { statusLabel } from '../utils/format';
@@ -89,6 +90,7 @@ function healthScore(incidents: Incident[]) {
 
 export default function DashboardPage() {
   const { data: incidents, isLoading, isError, error, refetch } = useIncidents({});
+  const [showCreate, setShowCreate] = useState(false);
 
   const stats = useMemo(() => {
     const list = incidents ?? [];
@@ -135,13 +137,22 @@ export default function DashboardPage() {
             Real-time overview of incident volume, health, status, severity, and category.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => refetch()}
-          className="rounded-lg border border-slate-300/60 bg-white/60 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-white dark:border-white/10 dark:bg-slate-800/60 dark:text-slate-200 dark:hover:bg-slate-800"
-        >
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="rounded-lg border border-slate-300/60 bg-white/60 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-white dark:border-white/10 dark:bg-slate-800/60 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            Refresh
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowCreate(true)}
+            className="rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 px-4 py-1.5 text-sm font-semibold text-white shadow transition hover:from-blue-500 hover:to-violet-500"
+          >
+            + New Incident
+          </button>
+        </div>
       </div>
 
       {isLoading && <p className="text-sm text-slate-500 dark:text-slate-400">Loading dashboard...</p>}
@@ -167,29 +178,28 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             <Panel title="System health">
-              {hasData ? (
-                <div className="relative">
-                  <ResponsiveContainer width="100%" height={260}>
-                    <RadialBarChart
-                      innerRadius="70%"
-                      outerRadius="100%"
-                      data={[{ name: 'Health', value: stats.score, fill: scoreColor }]}
-                      startAngle={90}
-                      endAngle={-270}
-                    >
-                      <RadialBar dataKey="value" cornerRadius={12} background />
-                    </RadialBarChart>
-                  </ResponsiveContainer>
-                  <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-4xl font-bold text-slate-900 dark:text-white">{stats.score}</span>
-                    <span className="text-sm font-medium" style={{ color: scoreColor }}>
-                      {scoreLabel}
-                    </span>
-                  </div>
+              <div className="relative">
+                <ResponsiveContainer width="100%" height={260}>
+                  <RadialBarChart
+                    innerRadius="70%"
+                    outerRadius="100%"
+                    data={[{ name: 'Health', value: stats.score, fill: scoreColor }]}
+                    startAngle={90}
+                    endAngle={-270}
+                  >
+                    <RadialBar dataKey="value" cornerRadius={12} background />
+                  </RadialBarChart>
+                </ResponsiveContainer>
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-4xl font-bold text-slate-900 dark:text-white">{stats.score}%</span>
+                  <span className="text-sm font-medium" style={{ color: scoreColor }}>
+                    {scoreLabel}
+                  </span>
+                  <span className="mt-0.5 text-xs text-slate-400">
+                    {hasData ? `${stats.criticalOpen} critical open` : 'All systems operational'}
+                  </span>
                 </div>
-              ) : (
-                <EmptyChart />
-              )}
+              </div>
             </Panel>
 
             <Panel title="Incidents by status">
@@ -299,6 +309,8 @@ export default function DashboardPage() {
           </div>
         </>
       )}
+
+      {showCreate && <CreateIncidentModal onClose={() => setShowCreate(false)} />}
     </div>
   );
 }

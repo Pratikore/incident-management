@@ -2,6 +2,18 @@
 # This file assumes the "incident-management" folder is the root of the connected repo
 # (i.e. it sits next to the backend/ and frontend/ folders). If your repo root is one level
 # up, change rootDir to "incident-management/backend".
+#
+# Out of the box this deploys with a file-backed H2 database (zero setup, but the disk is
+# ephemeral on Render's free tier so data resets on redeploy/restart). To use a managed
+# PostgreSQL that survives restarts, follow the two "OPTIONAL Postgres" steps below.
+
+# --- OPTIONAL Postgres, step 1: uncomment this block to provision a free managed database ---
+# databases:
+#   - name: incident-db
+#     plan: free
+#     databaseName: incidents
+#     user: incident
+
 services:
   - type: web
     name: incident-backend
@@ -23,3 +35,16 @@ services:
       # Set your own admin password in the Render dashboard.
       - key: APP_DEFAULT_ADMIN_PASSWORD
         sync: false
+      # --- OPTIONAL Postgres, step 2: uncomment these to point the app at the database above ---
+      # - key: SPRING_PROFILES_ACTIVE
+      #   value: postgres
+      # - key: DB_HOST
+      #   fromDatabase: { name: incident-db, property: host }
+      # - key: DB_PORT
+      #   fromDatabase: { name: incident-db, property: port }
+      # - key: DB_NAME
+      #   fromDatabase: { name: incident-db, property: database }
+      # - key: DB_USER
+      #   fromDatabase: { name: incident-db, property: user }
+      # - key: DB_PASSWORD
+      #   fromDatabase: { name: incident-db, property: password }
