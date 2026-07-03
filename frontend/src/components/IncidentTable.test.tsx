@@ -23,12 +23,11 @@ describe('IncidentTable', () => {
     expect(screen.getByText(/no incidents found/i)).toBeInTheDocument();
   });
 
-  it('renders incident rows with title, severity and status', () => {
+  it('renders incident rows with reference, title, reporter, severity and status', () => {
     renderWithProviders(<IncidentTable incidents={[incident]} />);
-    expect(screen.getByRole('link', { name: /checkout latency spike/i })).toHaveAttribute(
-      'href',
-      '/incidents/abc-123',
-    );
+    expect(screen.getByText('INC-0001')).toBeInTheDocument();
+    expect(screen.getByText(/checkout latency spike/i)).toBeInTheDocument();
+    expect(screen.getByText('admin')).toBeInTheDocument();
     expect(screen.getByText('HIGH')).toBeInTheDocument();
     expect(screen.getByText('Open')).toBeInTheDocument();
   });

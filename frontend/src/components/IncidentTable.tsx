@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import type { Incident } from '../types/incident';
 import { SeverityBadge, StatusBadge } from './Badges';
 import { formatDateTime } from '../utils/format';
@@ -9,6 +9,7 @@ interface Props {
 }
 
 export default function IncidentTable({ incidents }: Props) {
+  const navigate = useNavigate();
   if (incidents.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
@@ -37,6 +38,9 @@ export default function IncidentTable({ incidents }: Props) {
             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
               Status
             </th>
+            <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 lg:table-cell">
+              Reported by
+            </th>
             <th className="hidden px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 sm:table-cell">
               Created
             </th>
@@ -44,22 +48,18 @@ export default function IncidentTable({ incidents }: Props) {
         </thead>
         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
           {incidents.map((incident) => (
-            <tr key={incident.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+            <tr
+              key={incident.id}
+              onClick={() => navigate(`/incidents/${incident.id}`)}
+              className="cursor-pointer transition-colors hover:bg-blue-50/70 dark:hover:bg-slate-800/60"
+            >
               <td className="whitespace-nowrap px-4 py-3">
-                <Link
-                  to={`/incidents/${incident.id}`}
-                  className="font-mono text-xs font-medium text-blue-700 hover:underline dark:text-blue-400"
-                >
+                <span className="font-mono text-xs font-medium text-blue-700 dark:text-blue-400">
                   {incident.reference}
-                </Link>
+                </span>
               </td>
               <td className="px-4 py-3">
-                <Link
-                  to={`/incidents/${incident.id}`}
-                  className="font-medium text-slate-900 hover:text-blue-700 hover:underline dark:text-slate-100 dark:hover:text-blue-400"
-                >
-                  {incident.title}
-                </Link>
+                <span className="font-medium text-slate-900 dark:text-slate-100">{incident.title}</span>
               </td>
               <td className="hidden px-4 py-3 md:table-cell">
                 <span className="inline-flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300">
@@ -75,6 +75,18 @@ export default function IncidentTable({ incidents }: Props) {
               </td>
               <td className="px-4 py-3">
                 <StatusBadge status={incident.status} />
+              </td>
+              <td className="hidden px-4 py-3 text-sm text-slate-600 dark:text-slate-300 lg:table-cell">
+                {incident.createdBy ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-violet-600 text-[10px] font-semibold uppercase text-white">
+                      {incident.createdBy.slice(0, 2)}
+                    </span>
+                    {incident.createdBy}
+                  </span>
+                ) : (
+                  <span className="text-slate-400">—</span>
+                )}
               </td>
               <td className="hidden px-4 py-3 text-sm text-slate-500 dark:text-slate-400 sm:table-cell">
                 {formatDateTime(incident.createdAt)}

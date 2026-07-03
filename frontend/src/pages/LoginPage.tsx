@@ -34,11 +34,30 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden p-4">
+      {/* Decorative background: blurred gradient blobs + a large watermark shield */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
+        <div className="absolute -left-24 -top-24 h-96 w-96 rounded-full bg-blue-500/25 blur-3xl dark:bg-blue-600/20" />
+        <div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-violet-500/25 blur-3xl dark:bg-violet-600/20" />
+        <div className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-fuchsia-400/10 blur-3xl" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          className="absolute left-1/2 top-1/2 h-[38rem] w-[38rem] -translate-x-1/2 -translate-y-1/2 text-slate-900/[0.03] dark:text-white/[0.03]"
+        >
+          <path
+            fillRule="evenodd"
+            d="M11.484 2.17a.75.75 0 0 1 1.032 0 11.209 11.209 0 0 0 7.877 3.08.75.75 0 0 1 .722.515 12.74 12.74 0 0 1 .635 3.985c0 5.942-4.064 10.933-9.563 12.348a.749.749 0 0 1-.374 0C6.314 20.683 2.25 15.692 2.25 9.75c0-1.39.223-2.73.635-3.985a.75.75 0 0 1 .722-.516l.143.001c2.996 0 5.718-1.17 7.734-3.08Z"
+            clipRule="evenodd"
+          />
+        </svg>
+      </div>
+
       <div className="absolute right-4 top-4">
         <ThemeToggle />
       </div>
-      <div className="glass w-full max-w-md rounded-2xl p-8">
+      <div className="glass w-full max-w-md rounded-2xl p-8 shadow-2xl">
         <div className="mb-6 flex flex-col items-center gap-2 text-center">
           <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 shadow-lg">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7 text-white">

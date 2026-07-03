@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Area,
   AreaChart,
@@ -27,18 +27,30 @@ interface StatCardProps {
   label: string;
   value: number;
   accent: string;
+  to?: string;
 }
 
-function StatCard({ label, value, accent }: StatCardProps) {
-  return (
-    <div className="card p-4">
+function StatCard({ label, value, accent, to }: StatCardProps) {
+  const body = (
+    <>
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{label}</p>
         <span className={`h-2.5 w-2.5 rounded-full ${accent}`} />
       </div>
       <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{value}</p>
-    </div>
+    </>
   );
+  if (to) {
+    return (
+      <Link
+        to={to}
+        className="card block p-4 transition hover:-translate-y-0.5 hover:border-blue-400 hover:shadow-md dark:hover:border-blue-500"
+      >
+        {body}
+      </Link>
+    );
+  }
+  return <div className="card p-4">{body}</div>;
 }
 
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
@@ -91,6 +103,12 @@ function healthScore(incidents: Incident[]) {
 export default function DashboardPage() {
   const { data: incidents, isLoading, isError, error, refetch } = useIncidents({});
   const [showCreate, setShowCreate] = useState(false);
+  const navigate = useNavigate();
+
+  // Charts drill down into the incidents list, pre-filtered by the clicked segment.
+  const drillTo = (param: 'status' | 'severity' | 'category', value?: string) => {
+    if (value) navigate(`/incidents?${param}=${value}`);
+  };
 
   const stats = useMemo(() => {
     const list = incidents ?? [];
@@ -168,11 +186,26 @@ export default function DashboardPage() {
       {incidents && (
         <>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-            <StatCard label="Total" value={stats.total} accent="bg-slate-400" />
-            <StatCard label="Open" value={stats.byStatus.OPEN} accent="bg-blue-500" />
-            <StatCard label="In Progress" value={stats.byStatus.IN_PROGRESS} accent="bg-violet-500" />
-            <StatCard label="Resolved" value={stats.byStatus.RESOLVED} accent="bg-green-500" />
-            <StatCard label="Critical open" value={stats.criticalOpen} accent="bg-red-500" />
+            <StatCard label="Total" value={stats.total} accent="bg-slate-400" to="/incidents" />
+            <StatCard label="Open" value={stats.byStatus.OPEN} accent="bg-blue-500" to="/incidents?status=OPEN" />
+            <StatCard
+              label="In Progress"
+              value={stats.byStatus.IN_PROGRESS}
+              accent="bg-violet-500"
+              to="/incidents?status=IN_PROGRESS"
+            />
+            <StatCard
+              label="Resolved"
+              value={stats.byStatus.RESOLVED}
+              accent="bg-green-500"
+              to="/incidents?status=RESOLVED"
+            />
+            <StatCard
+              label="Critical open"
+              value={stats.criticalOpen}
+              accent="bg-red-500"
+              to="/incidents?severity=CRITICAL"
+            />
             <StatCard label="Resolution %" value={stats.resolutionRate} accent="bg-teal-500" />
           </div>
 
@@ -215,6 +248,8 @@ export default function DashboardPage() {
                       outerRadius={85}
                       innerRadius={48}
                       paddingAngle={2}
+                      cursor="pointer"
+                      onClick={(entry: { key?: string }) => drillTo('status', entry?.key)}
                     >
                       {statusData
                         .filter((d) => d.value > 0)
@@ -238,7 +273,12 @@ export default function DashboardPage() {
                     <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} />
                     <YAxis allowDecimals={false} stroke="#94a3b8" fontSize={12} />
                     <Tooltip cursor={{ fill: 'rgba(148,163,184,0.1)' }} />
-                    <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                    <Bar
+                      dataKey="value"
+                      radius={[6, 6, 0, 0]}
+                      cursor="pointer"
+                      onClick={(entry: { key?: string }) => drillTo('severity', entry?.key)}
+                    >
                       {severityData.map((entry) => (
                         <Cell key={entry.key} fill={SEVERITY_COLORS[entry.key as keyof typeof SEVERITY_COLORS]} />
                       ))}
@@ -259,7 +299,12 @@ export default function DashboardPage() {
                     <XAxis type="number" allowDecimals={false} stroke="#94a3b8" fontSize={12} />
                     <YAxis type="category" dataKey="name" width={90} stroke="#94a3b8" fontSize={12} />
                     <Tooltip cursor={{ fill: 'rgba(148,163,184,0.1)' }} />
-                    <Bar dataKey="value" radius={[0, 6, 6, 0]}>
+                    <Bar
+                      dataKey="value"
+                      radius={[0, 6, 6, 0]}
+                      cursor="pointer"
+                      onClick={(entry: { key?: string }) => drillTo('category', entry?.key)}
+                    >
                       {categoryData.map((entry) => (
                         <Cell key={entry.key} fill={CATEGORY_COLORS[entry.key as keyof typeof CATEGORY_COLORS]} />
                       ))}

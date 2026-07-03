@@ -24,7 +24,7 @@ export default function App() {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="glass sticky top-0 z-20 rounded-none">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
+        <div className="mx-auto flex max-w-screen-2xl items-center justify-between gap-4 px-4 py-3 sm:px-8">
           <Link to="/" className="flex items-center gap-2">
             <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 shadow">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5 text-white">
@@ -71,13 +71,24 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">
+      <main className="mx-auto w-full max-w-screen-2xl flex-1 px-4 py-6 sm:px-8">
         <Outlet />
       </main>
 
-      <footer className="glass mt-8 rounded-none">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-4 text-sm text-slate-500 dark:text-slate-400 sm:flex-row">
-          <p>Incident Management &middot; Monitoring Dashboard</p>
+      <footer className="mt-10 border-t border-slate-200 bg-white/80 backdrop-blur dark:border-slate-800 dark:bg-slate-950/70">
+        <div className="mx-auto flex max-w-screen-2xl flex-col items-center justify-between gap-2 px-4 py-5 text-sm text-slate-500 dark:text-slate-400 sm:flex-row sm:px-8">
+          <p className="flex items-center gap-2">
+            <span className="flex h-5 w-5 items-center justify-center rounded-md bg-gradient-to-br from-blue-500 to-violet-600">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-3 w-3 text-white">
+                <path
+                  fillRule="evenodd"
+                  d="M11.484 2.17a.75.75 0 0 1 1.032 0 11.209 11.209 0 0 0 7.877 3.08.75.75 0 0 1 .722.515 12.74 12.74 0 0 1 .635 3.985c0 5.942-4.064 10.933-9.563 12.348a.749.749 0 0 1-.374 0C6.314 20.683 2.25 15.692 2.25 9.75c0-1.39.223-2.73.635-3.985a.75.75 0 0 1 .722-.516l.143.001c2.996 0 5.718-1.17 7.734-3.08Z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </span>
+            Incident Management &middot; Monitoring Dashboard
+          </p>
           <p className="text-xs">Built with React, Spring Boot &amp; Tailwind CSS</p>
         </div>
       </footer>
