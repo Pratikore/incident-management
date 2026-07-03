@@ -1,0 +1,19 @@
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+
+# Logs
+*.log
+
+# Local environment / secrets (never commit API keys or passwords)
+.env
+.env.local
+*.env
+
+# Build artifacts (also covered by backend/ and frontend/ .gitignore)
+target/
+dist/
+node_modules/

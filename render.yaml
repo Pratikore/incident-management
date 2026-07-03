@@ -1,0 +1,25 @@
+# Render Blueprint for the Incident Management backend.
+# This file assumes the "incident-management" folder is the root of the connected repo
+# (i.e. it sits next to the backend/ and frontend/ folders). If your repo root is one level
+# up, change rootDir to "incident-management/backend".
+services:
+  - type: web
+    name: incident-backend
+    runtime: docker
+    plan: free
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /v3/api-docs
+    autoDeploy: true
+    envVars:
+      # Spring Boot listens on $PORT (see application.properties: server.port=${PORT:8080}).
+      - key: JAVA_TOOL_OPTIONS
+        value: -Xmx400m
+      # Optional: paste a free Groq key in the Render dashboard to enable full AI chat.
+      - key: AI_API_KEY
+        sync: false
+      - key: APP_DEFAULT_ADMIN_USERNAME
+        value: admin
+      # Set your own admin password in the Render dashboard.
+      - key: APP_DEFAULT_ADMIN_PASSWORD
+        sync: false
