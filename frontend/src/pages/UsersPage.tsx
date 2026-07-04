@@ -10,6 +10,7 @@ export default function UsersPage() {
   const createUser = useCreateUser();
 
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<Role>('USER');
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -18,6 +19,7 @@ export default function UsersPage() {
   const validate = () => {
     const next: Record<string, string> = {};
     if (username.trim().length < 3) next.username = 'Username must be at least 3 characters';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) next.email = 'Enter a valid email address';
     if (password.length < 6) next.password = 'Password must be at least 6 characters';
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -28,9 +30,10 @@ export default function UsersPage() {
     setSuccess(null);
     if (!validate()) return;
     try {
-      await createUser.mutateAsync({ username: username.trim(), password, role });
+      await createUser.mutateAsync({ username: username.trim(), email: email.trim(), password, role });
       setSuccess(`User "${username.trim()}" created.`);
       setUsername('');
+      setEmail('');
       setPassword('');
       setRole('USER');
       setErrors({});
@@ -65,6 +68,20 @@ export default function UsersPage() {
                 className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
               />
               {errors.username && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.username}</p>}
+            </div>
+            <div>
+              <label htmlFor="new-email" className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                Email
+              </label>
+              <input
+                id="new-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="name@company.com"
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+              />
+              {errors.email && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.email}</p>}
             </div>
             <div>
               <label htmlFor="new-password" className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -127,6 +144,9 @@ export default function UsersPage() {
                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                     Username
                   </th>
+                  <th className="hidden px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400 md:table-cell">
+                    Email
+                  </th>
                   <th className="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                     Role
                   </th>
@@ -139,6 +159,9 @@ export default function UsersPage() {
                 {users.map((u) => (
                   <tr key={u.id}>
                     <td className="px-5 py-3 text-sm font-medium text-slate-900 dark:text-slate-100">{u.username}</td>
+                    <td className="hidden px-5 py-3 text-sm text-slate-600 dark:text-slate-300 md:table-cell">
+                      {u.email || <span className="text-slate-400">—</span>}
+                    </td>
                     <td className="px-5 py-3">
                       <span
                         className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 ring-inset ${

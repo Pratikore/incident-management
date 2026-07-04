@@ -24,6 +24,10 @@ public class User {
   @Column(nullable = false, unique = true)
   private String username;
 
+  /** Email address used to notify the user about incident activity. */
+  @Column(name = "email")
+  private String email;
+
   @JsonIgnore
   @Column(name = "password_hash", nullable = false)
   private String passwordHash;
@@ -52,6 +56,14 @@ public class User {
 
   public void setUsername(String username) {
     this.username = username;
+  }
+
+  public String getEmail() {
+    return email;
+  }
+
+  public void setEmail(String email) {
+    this.email = email;
   }
 
   public String getPasswordHash() {

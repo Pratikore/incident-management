@@ -47,6 +47,8 @@ public class SecurityConfig {
         .authorizeHttpRequests(auth -> auth
             .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
             .requestMatchers("/api/users/**").hasRole("ADMIN")
+            // Only administrators may change an incident's status; everyone else can read.
+            .requestMatchers(HttpMethod.PATCH, "/api/incidents/*/status").hasRole("ADMIN")
             .requestMatchers("/api/**").authenticated()
             .anyRequest().permitAll())
         .exceptionHandling(ex -> ex

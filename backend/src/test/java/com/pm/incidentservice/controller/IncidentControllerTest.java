@@ -115,7 +115,8 @@ class IncidentControllerTest {
   }
 
   @Test
-  void updateStatusChangesStatus() throws Exception {
+  @WithMockUser(username = "admin", roles = "ADMIN")
+  void updateStatusChangesStatusForAdmin() throws Exception {
     String id = createIncidentAndReturnId();
     UpdateStatusRequestDTO update = new UpdateStatusRequestDTO();
     update.setStatus(IncidentStatus.RESOLVED);
@@ -125,5 +126,17 @@ class IncidentControllerTest {
             .content(objectMapper.writeValueAsString(update)))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status", is("RESOLVED")));
+  }
+
+  @Test
+  void updateStatusForbiddenForNonAdmin() throws Exception {
+    String id = createIncidentAndReturnId();
+    UpdateStatusRequestDTO update = new UpdateStatusRequestDTO();
+    update.setStatus(IncidentStatus.RESOLVED);
+
+    mockMvc.perform(patch("/api/incidents/" + id + "/status")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(update)))
+        .andExpect(status().isForbidden());
   }
 }

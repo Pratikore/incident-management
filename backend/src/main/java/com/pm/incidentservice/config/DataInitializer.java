@@ -20,19 +20,22 @@ public class DataInitializer implements CommandLineRunner {
   private final UserService userService;
   private final String defaultUsername;
   private final String defaultPassword;
+  private final String defaultEmail;
 
   public DataInitializer(UserService userService,
              @Value("${app.default-admin.username:admin}") String defaultUsername,
-             @Value("${app.default-admin.password:admin123}") String defaultPassword) {
+             @Value("${app.default-admin.password:admin123}") String defaultPassword,
+             @Value("${app.default-admin.email:admin@incident.local}") String defaultEmail) {
     this.userService = userService;
     this.defaultUsername = defaultUsername;
     this.defaultPassword = defaultPassword;
+    this.defaultEmail = defaultEmail;
   }
 
   @Override
   public void run(String... args) {
     if (userService.count() == 0) {
-      userService.create(defaultUsername, defaultPassword, Role.ADMIN);
+      userService.create(defaultUsername, defaultPassword, defaultEmail, Role.ADMIN);
       log.info("Seeded default admin user '{}' (change the password after first login).", defaultUsername);
     }
   }

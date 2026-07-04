@@ -29,6 +29,7 @@ class UserControllerTest {
   private String userJson(String username, String password, Role role) throws Exception {
     CreateUserRequestDTO req = new CreateUserRequestDTO();
     req.setUsername(username);
+    req.setEmail(username + "@example.com");
     req.setPassword(password);
     req.setRole(role);
     return objectMapper.writeValueAsString(req);

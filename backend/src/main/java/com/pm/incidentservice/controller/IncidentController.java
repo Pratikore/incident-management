@@ -8,7 +8,10 @@ import com.pm.incidentservice.model.Category;
 import com.pm.incidentservice.model.Incident;
 import com.pm.incidentservice.model.IncidentStatus;
 import com.pm.incidentservice.model.Severity;
+import com.pm.incidentservice.model.User;
+import com.pm.incidentservice.service.EmailNotificationService;
 import com.pm.incidentservice.service.IncidentService;
+import com.pm.incidentservice.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -35,9 +38,14 @@ import java.util.UUID;
 public class IncidentController {
 
   private final IncidentService service;
+  private final UserService userService;
+  private final EmailNotificationService notificationService;
 
-  public IncidentController(IncidentService service) {
+  public IncidentController(IncidentService service, UserService userService,
+      EmailNotificationService notificationService) {
     this.service = service;
+    this.userService = userService;
+    this.notificationService = notificationService;
   }
 
   @PostMapping
@@ -46,6 +54,7 @@ public class IncidentController {
       Authentication authentication) {
     String createdBy = authentication != null ? authentication.getName() : "system";
     Incident created = service.create(request, createdBy);
+    notificationService.notifyIncidentRaised(created, emailOf(createdBy));
     return ResponseEntity
         .created(URI.create("/api/incidents/" + created.getId()))
         .body(IncidentMapper.toDTO(created));
@@ -70,9 +79,24 @@ public class IncidentController {
 
   @PatchMapping("/{id}/status")
   @ResponseStatus(HttpStatus.OK)
-  @Operation(summary = "Update the status of an incident")
+  @Operation(summary = "Update the status of an incident (admins only)")
   public IncidentResponseDTO updateStatus(@PathVariable UUID id,
-      @Valid @RequestBody UpdateStatusRequestDTO request) {
-    return IncidentMapper.toDTO(service.updateStatus(id, request.getStatus()));
+      @Valid @RequestBody UpdateStatusRequestDTO request, Authentication authentication) {
+    IncidentStatus previousStatus = service.findById(id).getStatus();
+    Incident updated = service.updateStatus(id, request.getStatus());
+
+    if (updated.getStatus() != previousStatus) {
+      String updatedBy = authentication != null ? authentication.getName() : "system";
+      notificationService.notifyStatusChanged(updated, previousStatus, updatedBy, emailOf(updated.getCreatedBy()));
+    }
+    return IncidentMapper.toDTO(updated);
+  }
+
+  /** Resolve the email address for a username, or null when unknown. */
+  private String emailOf(String username) {
+    if (username == null) {
+      return null;
+    }
+    return userService.findByUsername(username).map(User::getEmail).orElse(null);
   }
 }

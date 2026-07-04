@@ -9,7 +9,14 @@ recommendations, and root-cause suggestions).
 ## Features
 
 - Login screen with token-based auth; a default admin is seeded on first startup
-- Role-based access (ADMIN / USER); admins can create users and manage roles
+- Role-based access (ADMIN / USER); admins can create users (with email) and manage roles
+- **Admins-only status changes**: regular users can view an incident's status but cannot change it
+  (enforced in the API and reflected in the UI)
+- **Email notifications**: the person who raised an incident is emailed when it is raised (with the
+  `INC-####` reference) and whenever its status changes (including who made the change). Works out of
+  the box by logging the messages; enable real SMTP with a few env vars
+- **Sample data on first run**: a `data.sql` seed loads 10 example incidents so the dashboard and lists
+  are populated immediately (H2/demo only, idempotent)
 - Monitoring dashboard with stat cards, an always-on system-health gauge (shows 100% healthy when
   there are no incidents), status/severity/category charts, a 7-day "new incidents" trend, and a
   one-click "New Incident" button
@@ -263,7 +270,7 @@ Base path: `/api/incidents`
 | POST   | `/`                               | Create an incident (validated) |
 | GET    | `/?severity=&status=`             | List incidents, optionally filtered |
 | GET    | `/{id}`                           | Get incident details (404 if missing) |
-| PATCH  | `/{id}/status`                    | Update incident status |
+| PATCH  | `/{id}/status`                    | Update incident status (**ADMIN only**; notifies the reporter by email) |
 | POST   | `/ai/severity-recommendation`     | Recommend a severity from a description |
 | POST   | `/{id}/ai/summary`                | Generate an AI summary |
 | POST   | `/{id}/ai/root-cause`             | Suggest likely root causes |
@@ -338,7 +345,7 @@ Create a user (admin token required):
 curl -X POST http://localhost:8080/api/users \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"username":"operator1","password":"secret123","role":"USER"}'
+  -d '{"username":"operator1","email":"operator1@example.com","password":"secret123","role":"USER"}'
 ```
 
 ## Validation & Error Handling
@@ -355,8 +362,15 @@ curl -X POST http://localhost:8080/api/users \
   file-backed H2 database (`./data/incidents.mv.db`) that survives restarts; point the
   `spring.datasource.*` properties (or `SPRING_DATASOURCE_*` env vars) at PostgreSQL for production.
   The schema is auto-managed by Hibernate (`spring.jpa.hibernate.ddl-auto=update`).
-- The default admin is seeded on first startup only (when no users exist) and its credentials are
-  configurable via `app.default-admin.username` / `app.default-admin.password`.
+- The default admin is seeded on first startup only (when no users exist) and its credentials/email are
+  configurable via `app.default-admin.username` / `app.default-admin.password` / `app.default-admin.email`.
+- Sample incidents are loaded from `src/main/resources/data.sql` at startup. This runs only for the
+  embedded H2 database (`spring.sql.init.mode=embedded`) and never against a real PostgreSQL; the
+  inserts are idempotent, so restarts do not create duplicates. Set `SQL_INIT_MODE=never` to disable.
+- **Email notifications** are logged by default so the app works with no mail account. To send real
+  email, set `MAIL_ENABLED=true` and provide SMTP settings via the standard Spring env vars:
+  `SPRING_MAIL_HOST`, `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD`
+  (optionally `MAIL_FROM`). Notifications are sent asynchronously and never block or fail the request.
 - Authentication uses opaque bearer tokens stored in-memory (tokens reset on restart); passwords are
   hashed with BCrypt.
 - CORS allows `http://localhost:5173` by default (configurable via `app.cors.allowed-origins`).

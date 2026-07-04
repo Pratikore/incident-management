@@ -9,6 +9,7 @@ public class UserResponseDTO {
 
   private UUID id;
   private String username;
+  private String email;
   private Role role;
   private Instant createdAt;
 
@@ -26,6 +27,14 @@ public class UserResponseDTO {
 
   public void setUsername(String username) {
     this.username = username;
+  }
+
+  public String getEmail() {
+    return email;
+  }
+
+  public void setEmail(String email) {
+    this.email = email;
   }
 
   public Role getRole() {

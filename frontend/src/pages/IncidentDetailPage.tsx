@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
 import { useIncident, useUpdateStatus } from '../hooks/useIncidents';
 import { generateSummary, suggestRootCause } from '../api/client';
 import { SeverityBadge, StatusBadge } from '../components/Badges';
@@ -10,6 +11,7 @@ import { categoryLabel } from '../utils/incidentMeta';
 
 export default function IncidentDetailPage() {
   const { id = '' } = useParams();
+  const { isAdmin } = useAuth();
   const { data: incident, isLoading, isError, error } = useIncident(id);
   const updateStatus = useUpdateStatus(id);
 
@@ -106,28 +108,46 @@ export default function IncidentDetailPage() {
       </div>
 
       <div className="card p-6">
-        <h2 className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">Update status</h2>
-        <div className="flex flex-wrap gap-2">
-          {STATUSES.map((status) => (
-            <button
-              key={status}
-              type="button"
-              onClick={() => handleStatusChange(status)}
-              disabled={status === incident.status || updateStatus.isPending}
-              className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
-                status === incident.status
-                  ? 'cursor-default bg-slate-900 text-white dark:bg-white dark:text-slate-900'
-                  : 'border border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800'
-              }`}
-            >
-              {statusLabel(status)}
-            </button>
-          ))}
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Status</h2>
+          {!isAdmin && (
+            <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+              View only
+            </span>
+          )}
         </div>
-        {updateStatus.isError && (
-          <p className="mt-2 text-xs text-red-600 dark:text-red-400">
-            {updateStatus.error instanceof Error ? updateStatus.error.message : 'Update failed'}
-          </p>
+        {isAdmin ? (
+          <>
+            <div className="flex flex-wrap gap-2">
+              {STATUSES.map((status) => (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => handleStatusChange(status)}
+                  disabled={status === incident.status || updateStatus.isPending}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                    status === incident.status
+                      ? 'cursor-default bg-slate-900 text-white dark:bg-white dark:text-slate-900'
+                      : 'border border-slate-300 text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  {statusLabel(status)}
+                </button>
+              ))}
+            </div>
+            {updateStatus.isError && (
+              <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                {updateStatus.error instanceof Error ? updateStatus.error.message : 'Update failed'}
+              </p>
+            )}
+          </>
+        ) : (
+          <div className="flex items-center gap-3">
+            <StatusBadge status={incident.status} />
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Only administrators can change the status of an incident.
+            </p>
+          </div>
         )}
       </div>
 

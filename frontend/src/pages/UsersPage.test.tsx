@@ -7,7 +7,11 @@ import UsersPage from './UsersPage';
 const createMutateAsync = vi.fn();
 
 vi.mock('../hooks/useUsers', () => ({
-  useUsers: () => ({ data: [{ id: '1', username: 'admin', role: 'ADMIN', createdAt: '2026-07-01T10:00:00Z' }], isLoading: false, isError: false }),
+  useUsers: () => ({
+    data: [{ id: '1', username: 'admin', email: 'admin@example.com', role: 'ADMIN', createdAt: '2026-07-01T10:00:00Z' }],
+    isLoading: false,
+    isError: false,
+  }),
   useCreateUser: () => ({ mutateAsync: createMutateAsync, isPending: false }),
 }));
 
@@ -19,7 +23,7 @@ describe('UsersPage', () => {
     expect(screen.getByText('admin')).toBeInTheDocument();
   });
 
-  it('validates username and password before creating', async () => {
+  it('validates username, email and password before creating', async () => {
     renderWithProviders(<UsersPage />);
 
     await userEvent.type(screen.getByLabelText('Username'), 'ab');
@@ -27,6 +31,7 @@ describe('UsersPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /create user/i }));
 
     expect(await screen.findByText(/at least 3 characters/i)).toBeInTheDocument();
+    expect(screen.getByText(/valid email address/i)).toBeInTheDocument();
     expect(screen.getByText(/at least 6 characters/i)).toBeInTheDocument();
     expect(createMutateAsync).not.toHaveBeenCalled();
   });
@@ -36,11 +41,13 @@ describe('UsersPage', () => {
     renderWithProviders(<UsersPage />);
 
     await userEvent.type(screen.getByLabelText('Username'), 'operator');
+    await userEvent.type(screen.getByLabelText('Email'), 'operator@example.com');
     await userEvent.type(screen.getByLabelText('Password'), 'secret123');
     await userEvent.click(screen.getByRole('button', { name: /create user/i }));
 
     expect(createMutateAsync).toHaveBeenCalledWith({
       username: 'operator',
+      email: 'operator@example.com',
       password: 'secret123',
       role: 'USER',
     });

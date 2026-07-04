@@ -25,13 +25,14 @@ public class UserService {
     this.passwordEncoder = passwordEncoder;
   }
 
-  public User create(String username, String rawPassword, Role role) {
+  public User create(String username, String rawPassword, String email, Role role) {
     String trimmed = username.trim();
     if (repository.existsByUsernameIgnoreCase(trimmed)) {
       throw new ConflictException("Username already exists: " + trimmed);
     }
     User user = new User();
     user.setUsername(trimmed);
+    user.setEmail(email != null ? email.trim() : null);
     user.setPasswordHash(passwordEncoder.encode(rawPassword));
     user.setRole(role);
     user.setCreatedAt(Instant.now());
@@ -39,7 +40,7 @@ public class UserService {
   }
 
   public User create(CreateUserRequestDTO request) {
-    return create(request.getUsername(), request.getPassword(), request.getRole());
+    return create(request.getUsername(), request.getPassword(), request.getEmail(), request.getRole());
   }
 
   public Optional<User> findByUsername(String username) {
