@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { recommendSeverity } from '../api/client';
+import { recommendSeverity, uploadAttachment } from '../api/client';
 import { useCreateIncident } from '../hooks/useIncidents';
 import { CATEGORIES, SEVERITIES } from '../types/incident';
 import type { Category, Severity } from '../types/incident';
@@ -15,9 +15,11 @@ export default function CreateIncidentModal({ onClose }: Props) {
   const [description, setDescription] = useState('');
   const [severity, setSeverity] = useState<Severity>('MEDIUM');
   const [category, setCategory] = useState<Category>('APPLICATION');
+  const [files, setFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [recommending, setRecommending] = useState(false);
   const [recommendation, setRecommendation] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const createMutation = useCreateIncident();
 
@@ -29,16 +31,31 @@ export default function CreateIncidentModal({ onClose }: Props) {
     return Object.keys(next).length === 0;
   };
 
+  const addFiles = (list: FileList | null) => {
+    if (!list) return;
+    setFiles((prev) => [...prev, ...Array.from(list)]);
+  };
+
+  const removeFile = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
     try {
-      await createMutation.mutateAsync({
+      const created = await createMutation.mutateAsync({
         title: title.trim(),
         description: description.trim(),
         severity,
         category,
       });
+      if (files.length > 0 && created?.id) {
+        setUploading(true);
+        for (const file of files) {
+          await uploadAttachment(created.id, file);
+        }
+      }
       onClose();
     } catch (err) {
       if (err instanceof ApiError && err.fieldErrors) {
@@ -46,6 +63,8 @@ export default function CreateIncidentModal({ onClose }: Props) {
       } else {
         setErrors({ form: err instanceof Error ? err.message : 'Failed to create incident' });
       }
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -165,6 +184,57 @@ export default function CreateIncidentModal({ onClose }: Props) {
             </select>
           </div>
 
+          <div>
+            <label className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Attachments <span className="font-normal text-slate-400">(screenshots or files, optional)</span>
+            </label>
+            <label
+              htmlFor="attachments"
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-4 text-sm text-slate-500 transition hover:border-blue-400 hover:text-blue-600 dark:border-slate-700 dark:text-slate-400 dark:hover:border-blue-500"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+                <path
+                  fillRule="evenodd"
+                  d="M10 3a1 1 0 0 1 1 1v5h5a1 1 0 1 1 0 2h-5v5a1 1 0 1 1-2 0v-5H4a1 1 0 1 1 0-2h5V4a1 1 0 0 1 1-1Z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Click to add files
+            </label>
+            <input
+              id="attachments"
+              type="file"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                addFiles(e.target.files);
+                e.target.value = '';
+              }}
+            />
+            {files.length > 0 && (
+              <ul className="mt-2 space-y-1">
+                {files.map((file, index) => (
+                  <li
+                    key={`${file.name}-${index}`}
+                    className="flex items-center justify-between rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                  >
+                    <span className="truncate">
+                      {file.name} <span className="text-slate-400">({Math.ceil(file.size / 1024)} KB)</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeFile(index)}
+                      className="ml-2 shrink-0 text-slate-400 hover:text-red-600 dark:hover:text-red-400"
+                      aria-label={`Remove ${file.name}`}
+                    >
+                      &times;
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
           {errors.form && <p className="text-sm text-red-600 dark:text-red-400">{errors.form}</p>}
 
           <div className="flex justify-end gap-2 pt-2">
@@ -177,10 +247,10 @@ export default function CreateIncidentModal({ onClose }: Props) {
             </button>
             <button
               type="submit"
-              disabled={createMutation.isPending}
+              disabled={createMutation.isPending || uploading}
               className="rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:from-blue-500 hover:to-violet-500 disabled:opacity-50"
             >
-              {createMutation.isPending ? 'Creating...' : 'Create incident'}
+              {uploading ? 'Uploading files...' : createMutation.isPending ? 'Creating...' : 'Create incident'}
             </button>
           </div>
         </form>

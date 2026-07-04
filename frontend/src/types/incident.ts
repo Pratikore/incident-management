@@ -62,3 +62,19 @@ export interface AiChatResponse {
   text: string;
   aiGenerated: boolean;
 }
+
+export interface Comment {
+  id: string;
+  author: string;
+  body: string;
+  createdAt: string;
+}
+
+export interface Attachment {
+  id: string;
+  filename: string;
+  contentType?: string | null;
+  size: number;
+  uploadedBy?: string | null;
+  createdAt: string;
+}

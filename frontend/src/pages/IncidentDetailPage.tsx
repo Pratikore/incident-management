@@ -1,9 +1,18 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
-import { useIncident, useUpdateStatus } from '../hooks/useIncidents';
-import { generateSummary, suggestRootCause } from '../api/client';
+import {
+  incidentKeys,
+  useAddComment,
+  useAttachments,
+  useComments,
+  useIncident,
+  useUpdateStatus,
+} from '../hooks/useIncidents';
+import { generateSummary, suggestRootCause, uploadAttachment } from '../api/client';
 import { SeverityBadge, StatusBadge } from '../components/Badges';
+import AttachmentGallery from '../components/AttachmentGallery';
 import { STATUSES } from '../types/incident';
 import type { IncidentStatus } from '../types/incident';
 import { formatDateTime, statusLabel } from '../utils/format';
@@ -12,8 +21,17 @@ import { categoryLabel } from '../utils/incidentMeta';
 export default function IncidentDetailPage() {
   const { id = '' } = useParams();
   const { isAdmin } = useAuth();
+  const queryClient = useQueryClient();
   const { data: incident, isLoading, isError, error } = useIncident(id);
   const updateStatus = useUpdateStatus(id);
+
+  const { data: comments } = useComments(id);
+  const addComment = useAddComment(id);
+  const [commentBody, setCommentBody] = useState('');
+
+  const { data: attachments } = useAttachments(id);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const [attachmentError, setAttachmentError] = useState<string | null>(null);
 
   const [summary, setSummary] = useState<string | null>(null);
   const [rootCause, setRootCause] = useState<string | null>(null);
@@ -37,6 +55,27 @@ export default function IncidentDetailPage() {
 
   const handleStatusChange = (status: IncidentStatus) => {
     updateStatus.mutate(status);
+  };
+
+  const handleAddComment = () => {
+    if (!commentBody.trim()) return;
+    addComment.mutate(commentBody.trim(), { onSuccess: () => setCommentBody('') });
+  };
+
+  const handleUploadFiles = async (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+    setUploadingAttachment(true);
+    setAttachmentError(null);
+    try {
+      for (const file of Array.from(fileList)) {
+        await uploadAttachment(id, file);
+      }
+      queryClient.invalidateQueries({ queryKey: incidentKeys.attachments(id) });
+    } catch (err) {
+      setAttachmentError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setUploadingAttachment(false);
+    }
   };
 
   const handleSummary = async () => {
@@ -149,6 +188,97 @@ export default function IncidentDetailPage() {
             </p>
           </div>
         )}
+      </div>
+
+      <div className="card p-6">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            Attachments {attachments && attachments.length > 0 && (
+              <span className="text-slate-400">({attachments.length})</span>
+            )}
+          </h2>
+          <label
+            htmlFor="detail-attachment"
+            className="cursor-pointer rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+          >
+            {uploadingAttachment ? 'Uploading...' : '+ Add file'}
+          </label>
+          <input
+            id="detail-attachment"
+            type="file"
+            multiple
+            className="hidden"
+            disabled={uploadingAttachment}
+            onChange={(e) => {
+              void handleUploadFiles(e.target.files);
+              e.target.value = '';
+            }}
+          />
+        </div>
+        {attachmentError && <p className="mb-2 text-xs text-red-600 dark:text-red-400">{attachmentError}</p>}
+        <AttachmentGallery incidentId={id} attachments={attachments ?? []} />
+      </div>
+
+      <div className="card p-6">
+        <h2 className="mb-4 text-sm font-semibold text-slate-900 dark:text-slate-100">
+          Activity &amp; comments {comments && comments.length > 0 && (
+            <span className="text-slate-400">({comments.length})</span>
+          )}
+        </h2>
+
+        <div className="space-y-4">
+          {comments && comments.length > 0 ? (
+            <ul className="space-y-3">
+              {comments.map((comment) => (
+                <li key={comment.id} className="flex gap-3">
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-violet-600 text-xs font-semibold uppercase text-white">
+                    {comment.author.slice(0, 2)}
+                  </span>
+                  <div className="min-w-0 flex-1 rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800/60">
+                    <div className="mb-0.5 flex items-baseline justify-between gap-2">
+                      <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{comment.author}</span>
+                      <span className="text-[11px] text-slate-400">{formatDateTime(comment.createdAt)}</span>
+                    </div>
+                    <p className="whitespace-pre-wrap break-words text-sm text-slate-700 dark:text-slate-300">
+                      {comment.body}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              No comments yet. Start the conversation below.
+            </p>
+          )}
+
+          <div className="border-t border-slate-100 pt-4 dark:border-slate-800">
+            <textarea
+              rows={3}
+              value={commentBody}
+              onChange={(e) => setCommentBody(e.target.value)}
+              placeholder="Add a comment or update for the team..."
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+            />
+            <div className="mt-2 flex items-center justify-between">
+              {addComment.isError ? (
+                <p className="text-xs text-red-600 dark:text-red-400">
+                  {addComment.error instanceof Error ? addComment.error.message : 'Failed to add comment'}
+                </p>
+              ) : (
+                <span />
+              )}
+              <button
+                type="button"
+                onClick={handleAddComment}
+                disabled={!commentBody.trim() || addComment.isPending}
+                className="rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:from-blue-500 hover:to-violet-500 disabled:opacity-50"
+              >
+                {addComment.isPending ? 'Posting...' : 'Add comment'}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="card p-6">

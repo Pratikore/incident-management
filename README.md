@@ -22,6 +22,9 @@ recommendations, and root-cause suggestions).
   one-click "New Incident" button
 - Human-friendly incident references (e.g. `INC-0007`) shown across the table, detail page, and chat
 - Each incident records who raised it (`createdBy`) plus created/updated timestamps
+- **Comment thread / activity log** on each incident so responders can discuss and record updates
+- **File & screenshot attachments**: upload while creating an incident or from the detail page; images
+  are previewed inline and any file can be downloaded (stored in the database)
 - Incident categories (Networking, Infrastructure, Database, Application, Security, Hardware, Other)
   with create, filter, table, and dashboard support
 - Dark theme (default) with a light/dark toggle, and glass-effect header and footer
@@ -371,6 +374,20 @@ curl -X POST http://localhost:8080/api/users \
   email, set `MAIL_ENABLED=true` and provide SMTP settings via the standard Spring env vars:
   `SPRING_MAIL_HOST`, `SPRING_MAIL_PORT`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD`
   (optionally `MAIL_FROM`). Notifications are sent asynchronously and never block or fail the request.
+  - **Gmail example** (needs a Google account with 2-Step Verification and an
+    [App Password](https://myaccount.google.com/apppasswords)):
+    ```
+    MAIL_ENABLED=true
+    SPRING_MAIL_HOST=smtp.gmail.com
+    SPRING_MAIL_PORT=587
+    SPRING_MAIL_USERNAME=you@gmail.com
+    SPRING_MAIL_PASSWORD=<16-char app password, no spaces>
+    MAIL_FROM=Incident Management <you@gmail.com>
+    ```
+  - Notifications are sent to the **incident owner's email**, so the logged-in user must have a real
+    email on their account. The seeded admin uses a placeholder (`admin@incident.local`); to receive
+    mail either create a user with your real email and use it, or set `DEFAULT_ADMIN_EMAIL` before the
+    first run (delete the local `data/` folder to re-seed the admin).
 - Authentication uses opaque bearer tokens stored in-memory (tokens reset on restart); passwords are
   hashed with BCrypt.
 - CORS allows `http://localhost:5173` by default (configurable via `app.cors.allowed-origins`).

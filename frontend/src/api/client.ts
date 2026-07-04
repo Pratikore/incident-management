@@ -1,7 +1,9 @@
 import type {
   AiChatResponse,
   AiTextResponse,
+  Attachment,
   ChatMessage,
+  Comment,
   CreateIncidentRequest,
   Incident,
   IncidentFilters,
@@ -156,4 +158,62 @@ export function sendChatMessage(message: string, history: ChatMessage[]): Promis
     method: 'POST',
     body: JSON.stringify({ message, history }),
   });
+}
+
+// ----- Comments -----
+
+export function listComments(incidentId: string): Promise<Comment[]> {
+  return request<Comment[]>(`${BASE_URL}/${incidentId}/comments`);
+}
+
+export function addComment(incidentId: string, body: string): Promise<Comment> {
+  return request<Comment>(`${BASE_URL}/${incidentId}/comments`, {
+    method: 'POST',
+    body: JSON.stringify({ body }),
+  });
+}
+
+// ----- Attachments -----
+
+export function listAttachments(incidentId: string): Promise<Attachment[]> {
+  return request<Attachment[]>(`${BASE_URL}/${incidentId}/attachments`);
+}
+
+// Multipart upload: let the browser set the Content-Type (with boundary), so we
+// bypass the JSON `request` helper and attach the auth header manually.
+export async function uploadAttachment(incidentId: string, file: File): Promise<Attachment> {
+  const form = new FormData();
+  form.append('file', file);
+  const token = getToken();
+  const response = await fetch(`${BASE_URL}/${incidentId}/attachments`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  });
+  if (!response.ok) {
+    if (response.status === 401 && onUnauthorized) onUnauthorized();
+    let message = `Upload failed with status ${response.status}`;
+    try {
+      const errBody = await response.json();
+      message = errBody.message ?? message;
+    } catch {
+      // no JSON body
+    }
+    throw new ApiError(response.status, message);
+  }
+  return (await response.json()) as Attachment;
+}
+
+// Downloads an attachment's raw bytes (authenticated) as a Blob for inline
+// display (images) or download links.
+export async function fetchAttachmentBlob(incidentId: string, attachmentId: string): Promise<Blob> {
+  const token = getToken();
+  const response = await fetch(`${BASE_URL}/${incidentId}/attachments/${attachmentId}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!response.ok) {
+    if (response.status === 401 && onUnauthorized) onUnauthorized();
+    throw new ApiError(response.status, `Could not load attachment (${response.status})`);
+  }
+  return response.blob();
 }
