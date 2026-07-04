@@ -25,22 +25,22 @@ export default function App() {
     <div className="flex min-h-screen flex-col">
       <header className="glass sticky top-0 z-20 rounded-none">
         <div className="mx-auto flex max-w-screen-2xl items-center justify-between gap-4 px-4 py-3 sm:px-8">
-          <div className="flex items-center gap-6">
-            <Link to="/" className="flex items-center gap-2">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 shadow">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5 text-white">
-                  <path
-                    fillRule="evenodd"
-                    d="M11.484 2.17a.75.75 0 0 1 1.032 0 11.209 11.209 0 0 0 7.877 3.08.75.75 0 0 1 .722.515 12.74 12.74 0 0 1 .635 3.985c0 5.942-4.064 10.933-9.563 12.348a.749.749 0 0 1-.374 0C6.314 20.683 2.25 15.692 2.25 9.75c0-1.39.223-2.73.635-3.985a.75.75 0 0 1 .722-.516l.143.001c2.996 0 5.718-1.17 7.734-3.08ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </span>
-              <span className="hidden text-lg font-semibold text-slate-900 dark:text-white sm:block">
-                Incident Management
-              </span>
-            </Link>
+          <Link to="/" className="flex items-center gap-2">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 shadow">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5 text-white">
+                <path
+                  fillRule="evenodd"
+                  d="M11.484 2.17a.75.75 0 0 1 1.032 0 11.209 11.209 0 0 0 7.877 3.08.75.75 0 0 1 .722.515 12.74 12.74 0 0 1 .635 3.985c0 5.942-4.064 10.933-9.563 12.348a.749.749 0 0 1-.374 0C6.314 20.683 2.25 15.692 2.25 9.75c0-1.39.223-2.73.635-3.985a.75.75 0 0 1 .722-.516l.143.001c2.996 0 5.718-1.17 7.734-3.08ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </span>
+            <span className="hidden text-lg font-semibold text-slate-900 dark:text-white sm:block">
+              Incident Management
+            </span>
+          </Link>
 
+          <div className="flex items-center gap-3">
             <nav className="flex items-center gap-1">
               <NavLink to="/" end className={navClass}>
                 Dashboard
@@ -54,9 +54,6 @@ export default function App() {
                 </NavLink>
               )}
             </nav>
-          </div>
-
-          <div className="flex items-center gap-3">
             <ThemeToggle />
             <div className="hidden text-right sm:block">
               <p className="text-sm font-medium text-slate-800 dark:text-slate-100">{user?.username}</p>
